@@ -1,0 +1,8 @@
+name:           SAP-systemd-library-tests
+description:    >
+    Maintainer: tblume <tblume@suse.com>
+    testsuite running SAP-systemd library calls
+schedule:
+    - boot/boot_to_desktop
+    - sap/sap_library_test
+    - shutdown/shutdown
