@@ -38,4 +38,3 @@ conditional_schedule:
     ARCH:
       s390x:
         - installation/bootloader_zkvm
-...
