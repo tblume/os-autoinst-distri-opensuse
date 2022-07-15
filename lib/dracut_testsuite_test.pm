@@ -37,7 +37,7 @@ sub testsuiteinstall {
        
     # use dracut from the repo of the qa package
     if (get_var('DRACUT_FROM_TESTREPO')) {
-        zypper_call "in --force $from_repo dracut dracut-mkinitrd-deprecated dracut-qa-testsuite";
+        zypper_call "in --force $from_repo dracut dracut-mkinitrd-deprecated";
         change_grub_config('=.*', '=9', 'GRUB_TIMEOUT');
         grub_mkconfig;
         wait_screen_change { enter_cmd "shutdown -r now" };
@@ -48,8 +48,13 @@ sub testsuiteinstall {
             wait_still_screen 10;
             wait_serial('Welcome to', 300) || die "System did not boot in 300 seconds.";
         }
-        assert_screen( "displaymanager", 500);
-        send_key "ctrl-alt-f1";
+
+        if (!check_var('DESKTOP', 'textmode')) {
+	   assert_screen( "displaymanager", 500);
+           send_key "ctrl-alt-f1";
+        }
+
+        assert_screen('linux-login', 30);
         reset_consoles;
         select_console('root-console');
     }
@@ -91,9 +96,12 @@ sub testsuiterun {
     assert_script_run "! grep -e ERROR -e FAIL $logs_dir/$test_name-setup.log";
     power_action('reboot', textmode => 1);
     wait_still_screen(10, 60);
-    # assert_screen("linux-login", 600);
-    assert_screen("displaymanager", 600);
-    send_key "ctrl-alt-f1";
+    if (!check_var('DESKTOP', 'textmode')) {
+        assert_screen( "displaymanager", 500);
+        send_key "ctrl-alt-f1";
+    }
+
+    assert_screen('linux-login', 30);
     enter_cmd "root";
     wait_still_screen 3;
     type_password;
