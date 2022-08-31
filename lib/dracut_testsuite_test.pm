@@ -91,6 +91,7 @@ sub testsuiteinstall {
         zypper_call 'in dracut-qa-testsuite';
     }
     zypper_call 'in nbd nfs-kernel-server open-iscsi iscsiuio dhcp-server NetworkManager tcpdump tgt';
+    zypper_call 'in dracut-kiwi-overlay python3-kiwi git tree dracut-kiwi-live dracut-qa-testsuite NetworkManager nbd nfs-kernel-server dhcp-server tcpdump tgt';
 }
 
 sub testsuiterun {
@@ -141,9 +142,11 @@ sub testsuiterun {
             send_key "ctrl-alt-f1";
         }
 
-        assert_screen('linux-login', 30);
     }
     
+    assert_screen('linux-login', 30);
+    select_console 'root-console';
+   
     # Clean
     assert_script_run "cd /usr/lib/dracut/test/$test_name";
 
