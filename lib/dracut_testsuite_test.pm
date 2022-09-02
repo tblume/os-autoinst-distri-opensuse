@@ -147,6 +147,35 @@ sub testsuiterun {
     assert_screen('linux-login', 30);
     select_console 'root-console';
    
+    if (defined($NMPREFIX))
+    {
+        assert_script_run "cd /usr/lib/dracut/test/$NMPREFIX";
+        assert_script_run "export basedir=/usr/lib/dracut && export testdir=/usr/lib/dracut/test/ && export NM=1 && ./test.sh --setup 2>&1 > $logs_dir/$test_name-setup.log", $timeout;
+        assert_script_run "export basedir=/usr/lib/dracut && export testdir=/usr/lib/dracut/test/ && export NM=1 && ./test.sh --run 2>&1 > $logs_dir/$test_name-run.log", $timeout;
+    }
+    else
+    {
+        assert_script_run "export basedir=/usr/lib/dracut && export testdir=/usr/lib/dracut/test/ && ./test.sh --setup 2>&1 > $logs_dir/$test_name-setup.log", $timeout;
+        assert_script_run "export basedir=/usr/lib/dracut && export testdir=/usr/lib/dracut/test/ && ./test.sh --run 2>&1 > $logs_dir/$test_name-run.log", $timeout;
+    }
+
+    # Check dracut generation errors
+    assert_script_run "! grep -e ERROR -e FAIL $logs_dir/$test_name-setup.log";
+    power_action('reboot', textmode => 1);
+    wait_still_screen(10, 60);
+    assert_screen("linux-login", 600);
+    if (!check_var('DESKTOP', 'textmode')) {
+        assert_screen("displaymanager", 500);
+        send_key "ctrl-alt-f1";
+    }
+
+    assert_screen('linux-login', 30);
+    enter_cmd "root";
+    wait_still_screen 3;
+    type_password;
+    wait_still_screen 3;
+    send_key 'ret';
+
     # Clean
     assert_script_run "cd /usr/lib/dracut/test/$test_name";
 
