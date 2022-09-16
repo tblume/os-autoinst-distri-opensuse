@@ -34,7 +34,9 @@ sub testsuiteinstall {
 
     zypper_call "ar https://updates.suse.de/download/SUSE/Backports/SLE-15-SP3_x86_64/standard/?ssl_verify=no devel-repo";
     zypper_call "--gpg-auto-import-keys ref devel-repo";    
-       
+    zypper_call "ar https://updates.suse.de/download/SUSE/Products/SLE-Module-Desktop-Applications/15-SP4/x86_64/product/?ssl_verify=no desktop-repo";
+    zypper_call "--gpg-auto-import-keys ref desktop-repo";
+
     # use dracut from the repo of the qa package
     if (get_var('DRACUT_FROM_TESTREPO')) {
         zypper_call "in --force $from_repo dracut dracut-mkinitrd-deprecated";
@@ -59,7 +61,7 @@ sub testsuiteinstall {
         select_console('root-console');
     }
     zypper_call 'in dracut-qa-testsuite';
-    zypper_call 'in nbd nfs-kernel-server dhcp-server NetworkManager tcpdump tgt';
+    zypper_call 'in nbd nfs-kernel-server open-iscsi iscsiuio dhcp-server NetworkManager tcpdump tgt';
 }
 
 sub testsuiterun {
@@ -83,13 +85,13 @@ sub testsuiterun {
     if ( defined($NMPREFIX) )
     {
 	    assert_script_run "cd /usr/lib/dracut/test/$NMPREFIX";
-	    assert_script_run "export basedir=/usr/lib/dracut && export testdir=/usr/lib/dracut/test/ && export NM=1 && ./test.sh --setup 2>&1 > $logs_dir/$test_name-setup.log", $timeout;
-	    assert_script_run "export basedir=/usr/lib/dracut && export testdir=/usr/lib/dracut/test/ && export NM=1 && ./test.sh --run 2>&1 > $logs_dir/$test_name-run.log", $timeout;
+	    assert_script_run "export basedir=/usr/lib/dracut && export testdir=/usr/lib/dracut/test/ && export NM=1 && ./test.sh --setup &> $logs_dir/$test_name-setup.log", $timeout;
+	    assert_script_run "export basedir=/usr/lib/dracut && export testdir=/usr/lib/dracut/test/ && export NM=1 && ./test.sh --run &> $logs_dir/$test_name-run.log", $timeout;
     }
     else 
     {
-	    assert_script_run "export basedir=/usr/lib/dracut && export testdir=/usr/lib/dracut/test/ && ./test.sh --setup 2>&1 > $logs_dir/$test_name-setup.log", $timeout;
-	    assert_script_run "export basedir=/usr/lib/dracut && export testdir=/usr/lib/dracut/test/ && ./test.sh --run 1>&1 > $logs_dir/$test_name-run.log", $timeout;
+	    assert_script_run "export basedir=/usr/lib/dracut && export testdir=/usr/lib/dracut/test/ && ./test.sh --setup &> $logs_dir/$test_name-setup.log", $timeout;
+	    assert_script_run "export basedir=/usr/lib/dracut && export testdir=/usr/lib/dracut/test/ && ./test.sh --run &> $logs_dir/$test_name-run.log", $timeout;
     }
 
     # Check dracut generation errors
@@ -107,7 +109,7 @@ sub testsuiterun {
     type_password;
     wait_still_screen 3;
     send_key 'ret';
-    
+
     # Clean
     assert_script_run "cd /usr/lib/dracut/test/$test_name";
 
