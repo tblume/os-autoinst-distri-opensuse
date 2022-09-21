@@ -90,8 +90,7 @@ sub testsuiteinstall {
     } else {
         zypper_call 'in dracut-qa-testsuite';
     }
-    zypper_call 'in nbd nfs-kernel-server open-iscsi iscsiuio dhcp-server NetworkManager tcpdump tgt';
-    zypper_call 'in dracut-kiwi-overlay python3-kiwi git tree dracut-kiwi-live dracut-qa-testsuite NetworkManager nbd nfs-kernel-server dhcp-server tcpdump tgt';
+    zypper_call 'in dracut-kiwi-overlay python3-kiwi git tree dracut-kiwi-live dracut-qa-testsuite NetworkManager nfs-kernel-server dhcp-server tcpdump open-iscsi iscsiuio tgt';
 }
 
 sub testsuiterun {
