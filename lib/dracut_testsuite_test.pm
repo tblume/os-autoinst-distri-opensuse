@@ -103,6 +103,11 @@ sub testsuiterun {
         assert_script_run "mount -o bind /tmp/test /usr/lib/dracut/test";
     }
     assert_script_run "mkdir -p $logs_dir";
+
+    if (check_var('DISTRI', 'sle-micro')) {
+        assert_script_run "cp -avr /usr/lib/dracut/test /tmp";
+        assert_script_run "mount -o bind /tmp/test /usr/lib/dracut/test";
+    }
     assert_script_run "cd /usr/lib/dracut/test/$test_name";
 
     my $NMPREFIX;
@@ -168,12 +173,25 @@ sub testsuiterun {
         send_key "ctrl-alt-f1";
     }
 
-    assert_screen('linux-login', 30);
-    enter_cmd "root";
-    wait_still_screen 3;
-    type_password;
-    wait_still_screen 3;
-    send_key 'ret';
+    if (check_var('DISTRI', 'sle-micro')) {
+        microos_reboot 1;
+    }
+    else
+    {
+        power_action('reboot', textmode => 1);
+        wait_still_screen(10, 60);
+        if (!check_var('DESKTOP', 'textmode')) {
+            assert_screen( "displaymanager", 500);
+            send_key "ctrl-alt-f1";
+        }
+
+        assert_screen('linux-login', 30);
+        enter_cmd "root";
+        wait_still_screen 3;
+        type_password;
+        wait_still_screen 3;
+        send_key 'ret';
+    }
 
     # Clean
     assert_script_run "cd /usr/lib/dracut/test/$test_name";
