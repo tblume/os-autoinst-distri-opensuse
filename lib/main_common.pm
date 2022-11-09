@@ -2651,6 +2651,8 @@ sub load_extra_tests_kernel {
 
     # keep it on the latest place as it taints kernel
     loadtest "kernel/module_build";
+    loadtest "kernel/tuned";
+    loadtest "kernel/fwupd" if is_sle('15+');
 }
 
 # Scheduling set for validation of specific installation
