@@ -33,13 +33,25 @@ sub testsuiteinstall {
 	zypper_call "--gpg-auto-import-keys ref dracut-testrepo";
         $from_repo = "--from dracut-testrepo";
     }
-    zypper_call "ar https://updates.suse.de/download/SUSE/Backports/SLE-15-SP4_x86_64/standard/?ssl_verify=no devel-repo";
-    zypper_call "ar https://download.suse.de/install/SLP/SLE-15-SP4-Module-Development-Tools-LATEST/x86_64/DVD1/?ssl_verify=no git-repo";
-    zypper_call "ar https://updates.suse.de/download/SUSE/Products/SLE-Module-Desktop-Applications/15-SP4/x86_64/product/?ssl_verify=no desktop-repo";
-    #repos necessary for test 16 (dmsquash)
-    zypper_call "ar https://download.opensuse.org/repositories/Virtualization:/Appliances:/Builder/openSUSE_Leap_15.4/?ssl_verify=no kiwi-repo";
-    zypper_call "ar https://download.opensuse.org/repositories/devel:/languages:/python:/backports/15.4/?ssl_verify=no kiwi-overlay-repo";
-    zypper_call "--gpg-auto-import-keys ref devel-repo";    
+    zypper_call "ar http://dist.suse.de/install/SLP/SLE-15-SP4-Module-Basesystem-LATEST/x86_64/DVD1/ base-repo";
+    zypper_call "ar http://dist.suse.de/install/SLP/SLE-15-SP4-Module-Server-Applications-LATEST/x86_64/DVD1/ server-repo";
+    zypper_call "ar http://dist.suse.de/install/SLP/SLE-15-SP4-Module-Development-Tools-LATEST/x86_64/DVD1/ devel-repo";
+    zypper_call "ar http://dist.suse.de/install/SLP/SLE-15-SP4-Module-Desktop-Applications-LATEST/x86_64/DVD1/ desktop-repo";
+    #for nbd
+    zypper_call "ar https://download.suse.de/ibs/SUSE:/SLE-15:/Update/standard/?ssl_verify=no nbd-repo";
+    #openqa repos have been deleted
+    zypper_call "mr -d SLE-Micro-5.3-Pool";
+    zypper_call "mr -d SLE-Micro-5.3-Updates";
+    script_run('suseconnect -r INTERNAL-USE-ONLY-dd97-133d -e thomas.blume@suse.com');
+
+    #repos necessary for test 16 (dmsquash) -> not yet implemented
+    #    zypper_call "ar https://download.suse.de/ibs/SUSE:/SLE-15-SP1:/Update/standard/?ssl_verify=no kiwi-repo";
+    #    zypper_call "ar https://download.opensuse.org/repositories/Virtualization:/Appliances:/Builder/openSUSE_Leap_15.4/?ssl_verify=no kiwi-repo";
+    #    zypper_call "ar https://download.opensuse.org/repositories/devel:/languages:/python:/backports/15.4/?ssl_verify=no kiwi-overlay-repo";
+    #zypper_call "ar https://updates.suse.de/download/SUSE/Backports/SLE-15-SP3_x86_64/standard/?ssl_verify=no devel-repo";
+    #zypper_call "ar https://updates.suse.de/download/SUSE/Products/SLE-Module-Desktop-Applications/15-SP4/x86_64/product/?ssl_verify=no desktop-repo";
+    
+    zypper_call "--gpg-auto-import-keys ref";
 
     if (check_var('DISTRI', 'sle-micro')) {
         trup_shell 'zypper --gpg-auto-import-keys ref';
