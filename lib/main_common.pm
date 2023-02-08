@@ -2231,6 +2231,323 @@ sub load_applicationstests {
     return 0;
 }
 
+sub load_security_console_prepare {
+    loadtest "console/consoletest_setup";
+    # Add this setup only in product testing
+    loadtest "security/test_repo_setup" if (get_var("SECURITY_TEST") =~ /^crypt_/ && !is_opensuse && (get_var("BETA") || check_var("FLAVOR", "Online-QR")));
+    loadtest "fips/fips_setup" if (get_var("FIPS_ENABLED"));
+    loadtest "console/openssl_alpn" if (get_var("FIPS_ENABLED") && get_var("JEOS"));
+    loadtest "console/yast2_vnc" if (get_var("FIPS_ENABLED") && is_pvm);
+}
+
+# The function name load_security_tests_crypt_* is to avoid confusing
+# since openSUSE does NOT have FIPS mode
+# Some tests are valid only for FIPS Regression testing. Use
+# "FIPS_ENABLED" to control whether to run these "FIPS only" cases
+sub load_security_tests_crypt_core {
+    load_security_console_prepare;
+
+    if (get_var('FIPS_ENABLED')) {
+        loadtest "fips/openssl/openssl_fips_alglist";
+        loadtest "fips/openssl/openssl_fips_hash";
+        loadtest "fips/openssl/openssl_fips_cipher";
+        loadtest "fips/openssl/dirmngr_setup";
+        loadtest "fips/openssl/dirmngr_daemon";    # dirmngr_daemon needs to be tested after dirmngr_setup
+        loadtest "fips/gnutls/gnutls_base_check";
+        loadtest "fips/gnutls/gnutls_server";
+        loadtest "fips/gnutls/gnutls_client";
+    }
+    loadtest "fips/openssl/openssl_tlsv1_3";
+    loadtest "fips/openssl/openssl_pubkey_rsa";
+    loadtest "fips/openssl/openssl_pubkey_dsa";
+    loadtest "fips/openssh/openssh_fips" if get_var("FIPS_ENABLED");
+    loadtest "console/sshd";
+    loadtest "console/ssh_cleanup";
+}
+
+
+sub load_security_tests_crypt_web {
+    load_security_console_prepare;
+
+    loadtest "console/curl_https";
+    loadtest "console/wget_https";
+    loadtest "console/w3m_https";
+    if (is_sle('15+') || is_tumbleweed) {
+        loadtest "console/links_https";
+        loadtest "console/lynx_https";
+    }
+    loadtest "console/apache_ssl";
+    if (get_var('FIPS_ENABLED')) {
+        loadtest "fips/mozilla_nss/apache_nssfips";
+        loadtest "console/libmicrohttpd" if is_sle('<15');
+    }
+}
+
+sub load_security_tests_crypt_kernel {
+    load_security_console_prepare;
+
+    loadtest "console/cryptsetup";
+    loadtest "security/dm_crypt";
+}
+
+sub load_security_tests_crypt_x11 {
+    set_var('SECTEST_REQUIRE_WE', 1);
+    load_security_console_prepare;
+
+    # In SLE, hexchat and seahorse are provided only in WE addon which is for
+    # x86_64 platform only.
+    if (is_x86_64) {
+        loadtest "x11/seahorse_sshkey";
+        loadtest "x11/hexchat_ssl";
+    }
+    loadtest "x11/x3270_ssl";
+}
+
+sub load_security_tests_crypt_firefox {
+    load_security_console_prepare;
+
+    loadtest "fips/mozilla_nss/firefox_nss" if get_var('FIPS_ENABLED');
+}
+
+sub load_security_tests_crypt_openjdk {
+    load_security_console_prepare;
+
+    if (get_var('FIPS_ENABLED')) {
+        loadtest "fips/openjdk/openjdk_fips";
+        loadtest "fips/openjdk/openjdk_ssh";
+    }
+}
+
+sub load_security_tests_crypt_tool {
+    load_security_console_prepare;
+
+    if (get_var('FIPS_ENABLED')) {
+        loadtest "fips/curl_fips_rc4_seed";
+        loadtest "console/aide_check";
+    }
+    loadtest "console/gpg";
+    loadtest "console/journald_fss";
+    loadtest "console/git";
+    loadtest "console/clamav";
+    loadtest "console/openvswitch_ssl";
+    loadtest "console/ntp_client";
+    loadtest "console/cups";
+    loadtest "console/syslog";
+    loadtest "x11/evolution/evolution_prepare_servers";
+    loadtest "console/mutt";
+}
+
+sub load_security_tests_crypt_libtool {
+    load_security_console_prepare;
+
+    loadtest "fips/libtool/liboauth";
+}
+
+sub load_security_tests_fips_setup {
+    # Setup system into fips mode
+    loadtest "fips/fips_setup";
+}
+
+sub load_security_tests_ipsec {
+    load_security_console_prepare;
+
+    loadtest "console/ipsec_tools_h2h";
+}
+
+sub load_security_tests_mmtest {
+    load_security_console_prepare;
+
+    # Load client tests by APPTESTS variable
+    load_applicationstests;
+}
+
+sub load_security_tests_apparmor {
+    load_security_console_prepare;
+
+    if (check_var('TEST', 'mau-apparmor') || is_jeos) {
+        loadtest "security/apparmor/aa_prepare";
+    }
+    loadtest "security/apparmor/aa_status";
+    loadtest "security/apparmor/aa_enforce";
+    loadtest "security/apparmor/aa_complain";
+    loadtest "security/apparmor/aa_genprof";
+    loadtest "security/apparmor/aa_autodep";
+    loadtest "security/apparmor/aa_logprof";
+    loadtest "security/apparmor/aa_easyprof";
+    loadtest "security/apparmor/aa_notify";
+    loadtest "security/apparmor/aa_disable";
+}
+
+sub load_security_tests_apparmor_profile {
+    if (check_var('TEST', 'mau-apparmor_profile')) {
+        load_security_console_prepare;
+        loadtest "security/apparmor/aa_prepare";
+    }
+    else {
+        load_security_console_prepare;
+    }
+    loadtest "security/apparmor_profile/usr_sbin_smbd";
+    loadtest "security/apparmor_profile/apache2_changehat";
+    loadtest "security/apparmor_profile/usr_sbin_dovecot";
+    loadtest "security/apparmor_profile/usr_sbin_traceroute";
+    loadtest "security/apparmor_profile/usr_sbin_nscd";
+    # ALWAYS run ".*usr_lib_dovecot_*" after "mailserver_setup" for the dependencies
+    loadtest "security/apparmor_profile/mailserver_setup";
+    loadtest "security/apparmor_profile/usr_lib_dovecot_pop3";
+    loadtest "security/apparmor_profile/usr_lib_dovecot_imap";
+}
+
+sub load_security_tests_yast2_apparmor {
+    load_security_console_prepare;
+
+    loadtest "security/yast2_apparmor/settings_disable_enable_apparmor";
+    loadtest "security/yast2_apparmor/settings_toggle_profile_mode";
+    loadtest "security/yast2_apparmor/scan_audit_logs_ncurses";
+    loadtest "security/yast2_apparmor/manually_add_profile_ncurses";
+}
+
+sub load_security_tests_yast2_users {
+    load_security_console_prepare;
+
+    loadtest "security/yast2_users/add_users";
+}
+
+sub load_security_tests_lynis {
+    load_security_console_prepare;
+
+    loadtest "security/lynis/lynis_setup";
+    loadtest "security/lynis/lynis_perform_system_audit";
+    loadtest "security/lynis/lynis_analyze_system_audit";
+    loadtest "security/lynis/lynis_harden_index";
+}
+
+sub load_security_tests_openscap {
+    # ALWAYS run following tests in sequence because of the dependencies
+
+    load_security_console_prepare;
+
+    # Setup - download test files and install necessary packages
+    loadtest "security/openscap/oscap_setup";
+
+    loadtest "security/openscap/oscap_info";
+    loadtest "security/openscap/oscap_oval_scanning";
+    loadtest "security/openscap/oscap_xccdf_scanning";
+    loadtest "security/openscap/oscap_source_datastream";
+    loadtest "security/openscap/oscap_result_datastream";
+    loadtest "security/openscap/oscap_remediating_online";
+    loadtest "security/openscap/oscap_remediating_offline";
+    loadtest "security/openscap/oscap_generating_report";
+    loadtest "security/openscap/oscap_generating_fix";
+    loadtest "security/openscap/oscap_validating";
+}
+
+sub load_security_tests_cc_audit_test {
+    # Setup environment for cc testing: 'audit-test' test suite setup
+    # Such as: download code branch; install needed packages
+    loadtest 'security/cc/cc_audit_test_setup';
+
+    # For s390x, we enable root ssh when installing system, so we need to
+    # disable root ssh login, because this is a requirement for cc testing.
+    loadtest 'security/cc/disable_root_ssh' if (is_s390x);
+
+    # Run test cases of 'audit-test' test suite which do NOT need SELinux env
+    loadtest 'security/cc/audit_tools';
+    loadtest 'security/cc/fail_safe';
+    loadtest 'security/cc/ip_eb_tables';
+    loadtest 'security/cc/kvm_svirt_apparmor';
+    loadtest 'security/cc/extended_apparmor_interface_trace_test';
+    loadtest 'security/cc/apparmor_negative_test';
+
+    # For s390x, we should enable root ssh before rebooting, otherwise, the automation test
+    # will fail on can't login the system.
+    if (is_s390x) {
+        my $root_ssh_switch = OpenQA::Test::RunArgs->new();
+        $root_ssh_switch->{option} = 'yes';
+        loadtest('security/cc/disable_root_ssh', name => 'enable_root_ssh', run_args => $root_ssh_switch);
+    }
+    # Some audit tests must be run in selinux enabled mode. so load selinux setup here
+    # Setup environment for cc testing: SELinux setup
+    # Such as: set up SELinux with permissive mode and specific policy type
+    loadtest 'security/selinux/selinux_setup';
+    loadtest 'security/cc/cc_selinux_setup';
+
+    # When system reboot, we need to disable root ssh for following tests
+    loadtest 'security/cc/disable_root_ssh' if (is_s390x);
+
+    # Run test cases of 'audit-test' test suite which do need SELinux env
+    # Please add these test cases here: poo#93441
+    loadtest 'security/cc/crypto';
+    loadtest 'security/cc/misc';
+}
+
+sub load_security_tests_cc_audit_remote_libvirt {
+    # Setup environment for cc testing: 'audit-test' test suite setup
+    # Such as: download code branch; install needed packages
+    loadtest 'security/cc/cc_audit_test_setup';
+
+    # Run test cases of 'audit-test' test suite which do NOT need SELinux env
+    loadtest 'security/cc/audit_remote_libvirt';
+}
+
+sub load_security_tests_mok_enroll {
+    loadtest "security/mokutil_sign";
+}
+
+sub load_security_tests_check_kernel_config {
+    load_security_console_prepare;
+
+    loadtest "security/check_kernel_config/CC_STACKPROTECTOR_STRONG" if (is_sle);
+    loadtest "security/check_kernel_config/CONFIG_FORTIFY_SOURCE";
+    loadtest "security/check_kernel_config/dm_crypt";
+}
+
+sub load_security_tests_pam {
+    load_security_console_prepare;
+
+    loadtest "security/pam/pam_basic_function";
+    loadtest "security/pam/pam_login";
+    loadtest "security/pam/pam_su";
+    loadtest "security/pam/pam_config";
+    loadtest "security/pam/pam_mount";
+    loadtest "security/pam/pam_faillock";
+    loadtest "security/pam/pam_u2f";
+}
+
+sub load_security_tests_create_swtpm_hdd {
+    load_security_console_prepare;
+
+    loadtest "security/create_swtpm_hdd/build_hdd";
+}
+
+sub load_security_tests_swtpm {
+    load_security_console_prepare;
+
+    loadtest "security/swtpm/swtpm_env_setup";
+    loadtest "security/swtpm/swtpm_verify";
+}
+
+sub load_security_tests_grub_auth {
+    load_security_console_prepare;
+
+    loadtest "security/grub_auth/grub_authorization";
+}
+
+sub load_security_tests_tpm2 {
+    if (is_sle('>=15-SP2')) {
+        load_security_console_prepare;
+
+        loadtest "security/tpm2/tpm2_env_setup";
+        loadtest "security/tpm2/tpm2_engine/tpm2_engine_info";
+        loadtest "security/tpm2/tpm2_engine/tpm2_engine_random_data";
+        loadtest "security/tpm2/tpm2_engine/tpm2_engine_rsa_operation";
+        loadtest "security/tpm2/tpm2_engine/tpm2_engine_ecdsa_operation";
+        loadtest "security/tpm2/tpm2_engine/tpm2_engine_self_sign";
+        loadtest "security/tpm2/tpm2_tools/tpm2_tools_self_contain_tool";
+        loadtest "security/tpm2/tpm2_tools/tpm2_tools_encrypt";
+        loadtest "security/tpm2/tpm2_tools/tpm2_tools_sign_verify";
+        loadtest "security/tpm2/tpm2_tools/tpm2_tools_auth";
+    }
+}
 
 sub load_vt_perf_tests {
     loadtest "virt_autotest/login_console";
