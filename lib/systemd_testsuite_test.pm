@@ -61,8 +61,14 @@ sub testsuiteinstall {
     zypper_call '--gpg-auto-import-keys ref';
     # use systemd from the repo of the qa package
     if (get_var('SYSTEMD_FROM_TESTREPO')) {
+	my $systemd_version = get_var("SYSTEMD_FROM_TESTREPO");
+	if ($systemd_version eq '1') {
+            $systemd_version = "";
+        } else {
+            $systemd_version = "=$systemd_version";
+    }
         if (is_sle('>15-SP2')) { zypper_call 'rm systemd-bash-completion' }
-        zypper_call 'in --from systemd-testrepo systemd systemd-sysvinit udev libsystemd0 systemd-coredump libudev1';
+        zypper_call "in -f --from systemd-testrepo systemd$systemd_version systemd-sysvinit$systemd_version udev$systemd_version libsystemd0$systemd_version systemd-coredump$systemd_version libudev1$systemd_version";
         change_grub_config('=.*', '=9', 'GRUB_TIMEOUT');
         grub_mkconfig;
         wait_screen_change { enter_cmd "shutdown -r now" };
@@ -82,7 +88,7 @@ sub testsuiteinstall {
         reset_consoles;
         select_console('root-console', await_console => 120);
     }
-    zypper_call 'in systemd-testsuite';
+    zypper_call 'in -f -y --from systemd-testrepo systemd-testsuite$systemd_version';
 }
 
 sub testsuiteprepare {
