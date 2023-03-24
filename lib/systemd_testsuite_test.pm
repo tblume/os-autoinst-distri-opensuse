@@ -32,8 +32,7 @@ sub testsuiteinstall {
             my $sub_project;
             if (is_tumbleweed()) {
                 $sub_project = 'Tumbleweed/openSUSE_Tumbleweed/';
-            }
-            else {
+            } else {
                 (my $version, my $service_pack) = split('\.', get_required_var('VERSION'));
                 $sub_project = "Leap:/$version/openSUSE_Leap_$version.$service_pack/";
             }
@@ -56,9 +55,16 @@ sub testsuiteinstall {
 
     zypper_call 'in strace selinux-policy-devel erofs-utils mtools';
 
+    my $unsigned = '';
+    my $gpgparm ='--gpg-auto-import-keys';
+    if (get_var('ALLOW_UNSIGNED')) {
+        $unsigned = '--gpgcheck-allow-unsigned' ;
+        $gpgparm = '--no-gpg-checks';
+    }
+
     # install systemd testsuite
-    zypper_call "ar $qa_testsuite_repo systemd-testrepo";
-    zypper_call '--gpg-auto-import-keys ref';
+    zypper_call "ar $unsigned $qa_testsuite_repo systemd-testrepo";
+    zypper_call "$gpgparm ref";
     # use systemd from the repo of the qa package
     if (get_var('SYSTEMD_FROM_TESTREPO')) {
 	my $systemd_version = get_var("SYSTEMD_FROM_TESTREPO");
