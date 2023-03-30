@@ -18,6 +18,7 @@ use utils 'zypper_call';
 use power_action_utils 'power_action';
 use transactional;
 use microos 'microos_reboot';
+use version_utils qw(is_sle_micro is_transactional is_leap_micro is_opensuse is_sle is_tumbleweed);
 
 my $logs_dir = '/root/dracut-testsuite-logs';
 
@@ -33,24 +34,35 @@ sub testsuiteinstall {
 	zypper_call "--gpg-auto-import-keys ref dracut-testrepo";
         $from_repo = "--from dracut-testrepo";
     }
-    zypper_call "ar http://dist.suse.de/install/SLP/SLE-15-SP4-Module-Basesystem-LATEST/x86_64/DVD1/ base-repo";
-    zypper_call "ar http://dist.suse.de/install/SLP/SLE-15-SP4-Module-Server-Applications-LATEST/x86_64/DVD1/ server-repo";
-    zypper_call "ar http://dist.suse.de/install/SLP/SLE-15-SP4-Module-Development-Tools-LATEST/x86_64/DVD1/ devel-repo";
-    zypper_call "ar http://dist.suse.de/install/SLP/SLE-15-SP4-Module-Desktop-Applications-LATEST/x86_64/DVD1/ desktop-repo";
+
+    if (is_sle('=15-SP3')) {
+        zypper_call "ar https://updates.suse.de/download/SUSE/Backports/SLE-15-SP3_x86_64/standard/?ssl_verify=no devel-repo";
+        zypper_call "ar https://updates.suse.de/download/SUSE/Products/SLE-Module-Desktop-Applications/15-SP4/x86_64/product/?ssl_verify=no desktop-repo";
+    }
+
+    if (is_sle('=15-SP4')) {
+        zypper_call "ar http://dist.suse.de/install/SLP/SLE-15-SP4-Module-Basesystem-LATEST/x86_64/DVD1/ base-repo";
+        zypper_call "ar http://dist.suse.de/install/SLP/SLE-15-SP4-Module-Server-Applications-LATEST/x86_64/DVD1/ server-repo";
+        zypper_call "ar http://dist.suse.de/install/SLP/SLE-15-SP4-Module-Development-Tools-LATEST/x86_64/DVD1/ devel-repo";
+        zypper_call "ar http://dist.suse.de/install/SLP/SLE-15-SP4-Module-Desktop-Applications-LATEST/x86_64/DVD1/ desktop-repo";
+    }
+
+    if (is_sle_micro) {
+    #openqa repos have been deleted
+        zypper_call "mr -d SLE-Micro-5.3-Pool";
+        zypper_call "mr -d SLE-Micro-5.3-Updates";
+        script_run('suseconnect -r INTERNAL-USE-ONLY-dd97-133d -e thomas.blume@suse.com');
+    }
+
     #for nbd
     zypper_call "ar https://download.suse.de/ibs/SUSE:/SLE-15:/Update/standard/?ssl_verify=no nbd-repo";
-    #openqa repos have been deleted
-    zypper_call "mr -d SLE-Micro-5.3-Pool";
-    zypper_call "mr -d SLE-Micro-5.3-Updates";
-    script_run('suseconnect -r INTERNAL-USE-ONLY-dd97-133d -e thomas.blume@suse.com');
+
 
     #repos necessary for test 16 (dmsquash) -> not yet implemented
     #    zypper_call "ar https://download.suse.de/ibs/SUSE:/SLE-15-SP1:/Update/standard/?ssl_verify=no kiwi-repo";
     #    zypper_call "ar https://download.opensuse.org/repositories/Virtualization:/Appliances:/Builder/openSUSE_Leap_15.4/?ssl_verify=no kiwi-repo";
     #    zypper_call "ar https://download.opensuse.org/repositories/devel:/languages:/python:/backports/15.4/?ssl_verify=no kiwi-overlay-repo";
-    #zypper_call "ar https://updates.suse.de/download/SUSE/Backports/SLE-15-SP3_x86_64/standard/?ssl_verify=no devel-repo";
-    #zypper_call "ar https://updates.suse.de/download/SUSE/Products/SLE-Module-Desktop-Applications/15-SP4/x86_64/product/?ssl_verify=no desktop-repo";
-    
+  
     zypper_call "--gpg-auto-import-keys ref";
 
     if (check_var('DISTRI', 'sle-micro')) {
@@ -84,25 +96,16 @@ sub testsuiteinstall {
         }
     }
 
-        if (!check_var('DISTRI', 'sle-micro')) {
-            if (!check_var('DESKTOP', 'textmode')) {
-                assert_screen("displaymanager", 500);
-                send_key "ctrl-alt-f1";
-            }
-            assert_screen('linux-login', 30);
-            reset_consoles;
-            select_console('root-console');
-        }
-
-        assert_screen('linux-login', 30);
-        reset_consoles;
-        select_console('root-console');
-    
-        zypper_call "in $from_repo dracut dracut-mkinitrd-deprecated dracut-qa-testsuite";
-    } else {
-        zypper_call 'in dracut-qa-testsuite';
+    if (!check_var('DESKTOP', 'textmode')) {
+        assert_screen("displaymanager", 500);
+        send_key "ctrl-alt-f1";
     }
-    zypper_call 'in dracut-kiwi-overlay python3-kiwi git tree dracut-kiwi-live dracut-qa-testsuite NetworkManager nfs-kernel-server dhcp-server tcpdump open-iscsi iscsiuio tgt';
+
+       #    if (!check_var('DISTRI', 'sle-micro')) {
+    assert_screen('linux-login', 30);
+    reset_consoles;
+    select_console('root-console');
+       #    }
 }
 
 sub testsuiterun {
@@ -159,10 +162,10 @@ sub testsuiterun {
         }
 
     }
-    
+
     assert_screen('linux-login', 30);
     select_console 'root-console';
-   
+
     if (defined($NMPREFIX))
     {
         assert_script_run "cd /usr/lib/dracut/test/$NMPREFIX";
@@ -171,6 +174,7 @@ sub testsuiterun {
     }
     else
     {
+        assert_script_run "cd /usr/lib/dracut/test/$test_name";
         assert_script_run "export basedir=/usr/lib/dracut && export testdir=/usr/lib/dracut/test/ && ./test.sh --setup 2>&1 > $logs_dir/$test_name-setup.log", $timeout;
         assert_script_run "export basedir=/usr/lib/dracut && export testdir=/usr/lib/dracut/test/ && ./test.sh --run 2>&1 > $logs_dir/$test_name-run.log", $timeout;
     }
@@ -217,7 +221,7 @@ sub testsuiterun {
 
 sub post_fail_hook {
     my ($self) = shift;
-    $self->SUPER::post_fail_hook;
+    #$self->SUPER::post_fail_hook;
     assert_script_run("tar -czf dracut-testsuite-logs.tar.gz $logs_dir", 600);
     upload_logs('dracut-testsuite-logs.tar.gz');
 }
