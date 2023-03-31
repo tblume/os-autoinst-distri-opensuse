@@ -73,7 +73,6 @@ sub testsuiteinstall {
         } else {
             $systemd_version = "=$systemd_version";
     }
-        if (is_sle('>15-SP2')) { zypper_call 'rm systemd-bash-completion' }
         zypper_call "in -f --from systemd-testrepo systemd$systemd_version systemd-sysvinit$systemd_version udev$systemd_version libsystemd0$systemd_version systemd-coredump$systemd_version libudev1$systemd_version";
         change_grub_config('=.*', '=9', 'GRUB_TIMEOUT');
         grub_mkconfig;
