@@ -53,7 +53,14 @@ sub testsuiteinstall {
         zypper_call "ar -c $utils::OPENQA_FTP_URL/" . $devel_repo . " devel-repo";
     }
 
-    zypper_call 'in strace selinux-policy-devel erofs-utils mtools';
+    my $addonpkgs;
+    if (is_tumbleweed()) {
+        $addonpkgs = "selinux-policy-devel erofs-utils knot";
+    } else {
+        $addonpkgs = "";
+    }
+
+    zypper_call "in strace mtools bzip2 $addonpkgs";
 
     my $unsigned = '';
     my $gpgparm ='--gpg-auto-import-keys';
@@ -114,12 +121,9 @@ sub testsuiteprepare {
             assert_script_run "sed -i \'/mksquashfs/s#sbin#usr/bin#\' $testname/test.sh";
     }
     #increase testsuite unit start timeout on slow machines
-    if ($testname eq 'TEST-73-LOCALE') {
-        assert_script_run "sed -i \'s/ExecStartPre=/TimeoutStartSec=600\\nExecStartPre=/\' ../testdata/units/testsuite-73.service";
-}
-    if ($testname eq 'TEST-74-AUX-UTILS') {
-        assert_script_run "sed -i \'s/ExecStartPre=/TimeoutStartSec=600\\nExecStartPre=/\' ../testdata/units/testsuite-74.service";
-    }
+    #if ($testname eq 'TEST-73-LOCALE') {
+    #    assert_script_run "sed -i \'s/ExecStartPre=/TimeoutStartSec=600\\nExecStartPre=/\' ../testdata/units/testsuite-73.service";
+    #}
 
     assert_script_run "export NO_BUILD=1 &&  make -C $testname setup 2>&1 | tee /tmp/testsuite.log", 300;
 
