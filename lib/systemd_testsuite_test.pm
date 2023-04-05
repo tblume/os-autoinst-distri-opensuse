@@ -116,6 +116,7 @@ sub testsuiteprepare {
     assert_script_run "rm -rf /var/tmp/systemd-test*";
     assert_script_run "cd /usr/lib/systemd/tests/integration-tests";
     assert_script_run "export NO_BUILD=1 &&  make -C $testname clean 2>&1 | tee /tmp/testsuite.log", 300;
+    assert_script_run 'sed -i \'/install_suse_systemd()/,$s/\[ ! -L "$file" \] \&\& \[ -d "$file" \]/\[ ! -L "$f" \] \&\& \[ -d "$f" \]/\' test-functions';
         if ($testname eq 'TEST-58-REPART') {
             assert_script_run 'sed -i \'/verity.crt/s#ln -s#ln -sf#\' ../testdata/units/testsuite-58.sh';
             assert_script_run "sed -i \'/mksquashfs/s#sbin#usr/bin#\' $testname/test.sh";
