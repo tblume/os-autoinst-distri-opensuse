@@ -55,6 +55,16 @@ sub run {
         assert_script_run('umount /mnt');
     }
 
+    #remove video=1024x768-16 boot parameter as it causes a hang when switching to tty6
+    if (get_var('REMVIDEOPARAM')) {
+        my $stor_inst = "/var/log/YaST2/installation_info/dump_*.yml";
+        my $boot_hd = script_output("cat $stor_inst | sed -n 's/selected_root_partition.*dev/\\\"dev/p'");
+        assert_script_run("mount $boot_hd /mnt");
+        my $grubcfg = script_output("find /mnt -name grub.cfg");
+	assert_script_run("sed -i -e \"s#video=1024x768-16##g\" $grubcfg");
+        assert_script_run('umount /mnt');
+    }
+
     # check for right boot-device on s390x (zVM, DASD ONLY)
     if (is_backend_s390x && !check_var('S390_DISK', 'ZFCP')) {
         if (script_run("lsreipl | grep $dasd_path")) {
