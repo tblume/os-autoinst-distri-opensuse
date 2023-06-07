@@ -66,19 +66,28 @@ sub testsuiteinstall {
 
     if (check_var('DISTRI', 'sle-micro')) {
         trup_shell 'zypper --gpg-auto-import-keys ref';
-        trup_shell 'zypper --non-interactive in dracut-kiwi-overlay python3-kiwi git tree dracut-kiwi-live NetworkManager nfs-kernel-server dhcp-server tcpdump open-iscsi iscsiuio tgt pciutils sysvinit-tools nbd';
+        trup_shell 'zypper --non-interactive in dracut-kiwi-overlay python3-kiwi git tree dracut-kiwi-live NetworkManager nfs-kernel-server dhcp-server dhcp-client tcpdump open-iscsi iscsiuio tgt pciutils sysvinit-tools nbd';
         # use dracut from the repo of the qa package
         if ($from_repo) {
-            trup_shell "zypper --non-interactive in --force $from_repo dracut dracut-mkinitrd-deprecated dracut-qa-testsuite";
+            if (is_tumbleweed) {
+                trup_shell "zypper --non-interactive in --force $from_repo dracut dracut-qa-testsuite";
+            } else {
+                trup_shell "zypper --non-interactive in --force $from_repo dracut dracut-mkinitrd-deprecated dracut-qa-testsuite";
+            }
 	} else {
             trup_shell 'zypper --non-interactive in dracut-qa-testsuite';
         }
     } else {
         zypper_call "--gpg-auto-import-keys ref";
-        zypper_call 'in dracut-kiwi-overlay python3-kiwi git tree dracut-kiwi-live NetworkManager nfs-kernel-server dhcp-server tcpdump open-iscsi iscsiuio tgt nbd';
+        zypper_call 'in dracut-kiwi-overlay python3-kiwi git tree dracut-kiwi-live NetworkManager nfs-kernel-server dhcp-server dhcp-client tcpdump open-iscsi iscsiuio tgt nbd';
         # use dracut from the repo of the qa package
         if ($from_repo) {
-            zypper_call "in --force $from_repo dracut dracut-mkinitrd-deprecated dracut-qa-testsuite";
+            if (is_tumbleweed) {
+                zypper_call "in --force $from_repo dracut dracut-qa-testsuite";
+            } else {
+                zypper_call "in --force $from_repo dracut dracut-mkinitrd-deprecated dracut-qa-testsuite";
+            }
+
 	} else {
             zypper_call "in dracut-qa-testsuite";
         }
