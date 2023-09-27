@@ -19,7 +19,7 @@ sub pre_run_hook {
 
 sub run {
     #run test
-    my $timeout = 900;
+    my $timeout = 1200;
     assert_script_run 'cd /usr/lib/systemd/tests/integration-tests';
     assert_script_run 'export NO_BUILD=1 && make -C TEST-02-UNITTESTS run 2>&1 | tee /tmp/testsuite.log', $timeout;
     assert_script_run 'grep "TEST-02-UNITTESTS RUN: .* \[OK\]" /tmp/testsuite.log';

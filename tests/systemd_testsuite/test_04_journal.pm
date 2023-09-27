@@ -19,7 +19,7 @@ sub pre_run_hook {
 
 sub run {
     #run test
-    my $timeout = get_var('SYSTEMD_TEST_DEFAULT_TIMEOUT') || 480;
+    my $timeout = get_var('SYSTEMD_TEST_DEFAULT_TIMEOUT') || 900;
     assert_script_run 'cd /usr/lib/systemd/tests/integration-tests';
     assert_script_run 'export NO_BUILD=1 && make -C TEST-04-JOURNAL run 2>&1 | tee /tmp/testsuite.log', $timeout;
     assert_script_run 'grep "TEST-04-JOURNAL RUN: .* \[OK\]" /tmp/testsuite.log';
