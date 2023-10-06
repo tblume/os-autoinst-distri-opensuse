@@ -24,6 +24,13 @@ use Utils::Logging qw(save_and_upload_log tar_and_upload_log);
 
 sub testsuiteinstall {
     my ($self) = @_;
+    my $unsigned = '';
+    my $gpgparm ='--gpg-auto-import-keys';
+    if (get_var('ALLOW_UNSIGNED')) {
+        $unsigned = '--gpgcheck-allow-unsigned' ;
+        $gpgparm = '--no-gpg-checks';
+    }
+
     # The isotovideo setting QA_TESTSUITE_REPO is not mandatory.
     # QA_TESTSUITE_REPO is meant to override the default repos with a custom OBS repo to test changes on the test suite package.
     my $qa_testsuite_repo = get_var('QA_TESTSUITE_REPO', '');
@@ -55,19 +62,17 @@ sub testsuiteinstall {
 
     my $addonpkgs;
     if (is_tumbleweed()) {
-        $addonpkgs = "selinux-policy-devel erofs-utils knot";
+        my $addon_repo1 = "https://download.opensuse.org/repositories/server:/monitoring/openSUSE_Tumbleweed";
+        zypper_call "ar $unsigned $addon_repo1 addon-repo1";
+        zypper_call "$gpgparm ref";
+
+        $addonpkgs = "selinux-policy-devel erofs-utils knot stress";
+
     } else {
         $addonpkgs = "";
     }
 
     zypper_call "in strace mtools bzip2 $addonpkgs";
-
-    my $unsigned = '';
-    my $gpgparm ='--gpg-auto-import-keys';
-    if (get_var('ALLOW_UNSIGNED')) {
-        $unsigned = '--gpgcheck-allow-unsigned' ;
-        $gpgparm = '--no-gpg-checks';
-    }
 
     # install systemd testsuite
     zypper_call "ar $unsigned $qa_testsuite_repo systemd-testrepo";
