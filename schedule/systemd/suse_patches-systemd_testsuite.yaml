@@ -61,6 +61,11 @@ conditional_schedule:
                 - systemd_testsuite/test_75_resolved
                 - systemd_testsuite/test_76_sysctl
                 - systemd_testsuite/test_77_openfile
+                - systemd_testsuite/v254/test_78_sigqueue
+                - systemd_testsuite/v254/test_79_mempress
+                - systemd_testsuite/v254/test_80_notifyaccess
+                - systemd_testsuite/v254/test_81_generators
+                - systemd_testsuite/v254/test_82_softreboot
             '15-SP4':
                 - systemd_testsuite/test_01_basic
                 - systemd_testsuite/test_02_unittests
