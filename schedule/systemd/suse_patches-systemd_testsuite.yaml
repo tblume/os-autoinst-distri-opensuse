@@ -66,6 +66,65 @@ conditional_schedule:
                 - systemd_testsuite/v254/test_80_notifyaccess
                 - systemd_testsuite/v254/test_81_generators
                 - systemd_testsuite/v254/test_82_softreboot
+            '15-SP6':
+                - systemd_testsuite/test_01_basic
+                - systemd_testsuite/test_02_unittests
+                - systemd_testsuite/test_03_jobs
+                - systemd_testsuite/test_04_journal
+                - systemd_testsuite/test_05_rlimits
+                - systemd_testsuite/test_06_selinux
+                - systemd_testsuite/v254/test_07_pid1
+                - systemd_testsuite/v254/test_13_nspawn
+                - systemd_testsuite/test_16_extend_timeout
+                - systemd_testsuite/test_17_udev
+                - systemd_testsuite/test_18_failureaction
+                - systemd_testsuite/v254/test_19_cgroup
+                - systemd_testsuite/test_21_dfuzzer
+                - systemd_testsuite/test_22_tmpfiles
+                - systemd_testsuite/v254/test_23_unit_file
+                - systemd_testsuite/test_24_cryptsetup
+                - systemd_testsuite/test_25_import
+                - systemd_testsuite/test_26_systemctl
+                - systemd_testsuite/test_29_portable
+                - systemd_testsuite/test_30_onclockchange
+                - systemd_testsuite/test_31_device_enumeration
+                - systemd_testsuite/test_32_oompolicy
+                - systemd_testsuite/test_34_dynamicusermigrate
+                - systemd_testsuite/test_36_numapolicy
+                - systemd_testsuite/v254/test_38_freezer
+                - systemd_testsuite/test_43_privateuser_unpriv
+                - systemd_testsuite/test_44_log_namespace
+                - systemd_testsuite/v254/test_45_timedate
+                - systemd_testsuite/v254/test_46_homed
+                - systemd_testsuite/test_50_dissect
+                - systemd_testsuite/test_52_honorfirstshutdown
+                - systemd_testsuite/test_53_issue_16347
+                - systemd_testsuite/test_54_creds
+                - systemd_testsuite/test_55_oomd
+                - systemd_testsuite/test_58_repart
+                - systemd_testsuite/test_59_reloading_restart
+                - systemd_testsuite/test_60_mount_ratelimit
+                - systemd_testsuite/test_62_restrict_ifaces
+                - systemd_testsuite/test_63_path
+                - systemd_testsuite/test_64_udev_storage
+                - systemd_testsuite/test_65_analyze
+                - systemd_testsuite/test_66_device_isolation
+                - systemd_testsuite/test_67_integrity
+                - systemd_testsuite/test_68_propagate_exit_status
+                - systemd_testsuite/test_69_shutdown
+                - systemd_testsuite/test_70_tpm2
+                - systemd_testsuite/test_71_hostname
+                - systemd_testsuite/test_72_sysupdate
+                - systemd_testsuite/test_73_locale
+                - systemd_testsuite/test_74_aux_utils
+                - systemd_testsuite/test_75_resolved
+                - systemd_testsuite/test_76_sysctl
+                - systemd_testsuite/test_77_openfile
+                - systemd_testsuite/v254/test_78_sigqueue
+                - systemd_testsuite/v254/test_79_mempress
+                - systemd_testsuite/v254/test_80_notifyaccess
+                - systemd_testsuite/v254/test_81_generators
+                - systemd_testsuite/v254/test_82_softreboot
             '15-SP4':
                 - systemd_testsuite/test_01_basic
                 - systemd_testsuite/test_02_unittests
