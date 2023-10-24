@@ -84,8 +84,15 @@ sub testsuiteinstall {
             $systemd_version = "";
         } else {
             $systemd_version = "=$systemd_version";
-    }
+        }
+        if (is_sle('>15-sp5')) {
+	    zypper_call "rm systemd-lang";
+            my $addon_repo2 = "https://download.suse.de/ibs/SUSE:/SLE-15-SP5:/GA/standard?ssl_verify=no";
+            zypper_call "ar $unsigned $addon_repo2 addon-repo2";
+            zypper_call "$gpgparm ref";
+        }
         zypper_call "in -f --from systemd-testrepo systemd$systemd_version systemd-sysvinit$systemd_version udev$systemd_version libsystemd0$systemd_version systemd-coredump$systemd_version libudev1$systemd_version";
+
         change_grub_config('=.*', '=9', 'GRUB_TIMEOUT');
         grub_mkconfig;
         wait_screen_change { enter_cmd "shutdown -r now" };
