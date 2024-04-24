@@ -56,14 +56,25 @@ sub run {
         add_suseconnect_product(get_addon_fullname('sdk'));
         add_suseconnect_product(get_addon_fullname('phub'));
         add_suseconnect_product(get_addon_fullname('python3'));
+
         my $repo = sprintf('http://download.suse.de/download/ibs/SUSE:/SLE-%s:/GA/standard/',
             get_var('VERSION'));
-        zypper_call("ar $repo systemd-tests");
     }
 
-    #install testsuite and dependecies
-    zypper_call('ref');
-    zypper_call("in @pkgs");
+    # QA_TESTSUITE_REPO is meant to override the default repos with a custom OBS repo to test changes on the test suite package.
+    my $qa_testsuite_repo = get_var('QA_TESTSUITE_REPO', '');
+    if ($qa_testsuite_repo) {
+        my $tsrepo = sprintf($qa_testsuite_repo,
+            get_var('VERSION'));
+        zypper_call("ar $tsrepo systemd-tests");
+
+        #install testsuite and dependecies
+        zypper_call('--gpg-auto-import-keys ref');
+        if (get_var('SYSTEMD_FROM_TESTREPO')) {
+            zypper_call 'in --force-resolution --from systemd-tests systemd systemd-sysvinit udev libsystemd0 systemd-coredump libudev1';
+        }
+    }
+    zypper_call("in --force-resolution @pkgs");
 
     # navigate to test case directory
     # extract all available test cases
