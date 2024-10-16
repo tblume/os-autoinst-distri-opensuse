@@ -70,7 +70,7 @@ sub testsuiteinstall {
         # use dracut from the repo of the qa package
         if ($from_repo) {
             if (is_tumbleweed) {
-                trup_shell "zypper --non-interactive in --force $from_repo dracut dracut-qa-testsuite";
+                trup_shell "zypper --non-interactive in --force $from_repo dracut dracut-qa-testsuite dracut-extra";
             } else {
                 trup_shell "zypper --non-interactive in --force $from_repo dracut dracut-mkinitrd-deprecated dracut-qa-testsuite";
             }
@@ -79,11 +79,11 @@ sub testsuiteinstall {
         }
     } else {
         zypper_call "--gpg-auto-import-keys ref";
-        zypper_call 'in dracut-kiwi-overlay python3-kiwi git tree dracut-kiwi-live NetworkManager nfs-kernel-server dhcp-server dhcp-client tcpdump open-iscsi iscsiuio tgt nbd';
+        zypper_call 'in dracut-kiwi-overlay python3-kiwi git tree dracut-kiwi-live NetworkManager nfs-kernel-server dhcp-server dhcp-client tcpdump open-iscsi iscsiuio tgt nbd dash';
         # use dracut from the repo of the qa package
         if ($from_repo) {
             if (is_tumbleweed) {
-                zypper_call "in --force $from_repo dracut dracut-qa-testsuite";
+                zypper_call "in --force $from_repo dracut dracut-qa-testsuite dracut-extra";
             } else {
                 zypper_call "in --force $from_repo dracut dracut-mkinitrd-deprecated dracut-qa-testsuite";
             }
