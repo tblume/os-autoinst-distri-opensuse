@@ -79,7 +79,7 @@ sub testsuiteinstall {
         }
     } else {
         zypper_call "--gpg-auto-import-keys ref";
-        zypper_call 'in dracut-kiwi-overlay python3-kiwi git tree dracut-kiwi-live NetworkManager nfs-kernel-server dhcp-server dhcp-client tcpdump open-iscsi iscsiuio tgt nbd dash';
+        zypper_call 'in dracut-kiwi-overlay python3-kiwi git tree dracut-kiwi-live NetworkManager nfs-kernel-server dhcp-server dhcp-client tcpdump open-iscsi iscsiuio tgt nbd dash qemu dbus-1-daemon';
         # use dracut from the repo of the qa package
         if ($from_repo) {
             if (is_tumbleweed) {
