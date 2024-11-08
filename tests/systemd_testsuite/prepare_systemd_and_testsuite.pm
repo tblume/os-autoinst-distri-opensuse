@@ -43,6 +43,7 @@ sub run {
       e2fsprogs
       hostname
       net-tools-deprecated
+      ncat
       systemd-testsuite
     );
 
