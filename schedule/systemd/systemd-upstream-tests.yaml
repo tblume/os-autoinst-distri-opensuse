@@ -1,0 +1,8 @@
+name: systemd-upstream-tests
+description: >
+  Run systemd upstream test suite
+  start framework.
+vars: {}
+schedule:
+  - boot/boot_to_desktop
+  - systemd_testsuite/prepare_systemd_and_testsuite
