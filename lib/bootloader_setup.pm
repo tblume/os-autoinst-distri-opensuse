@@ -1325,7 +1325,7 @@ sub zkvm_add_interface {
     my $netdev = get_required_var('NETDEV');
     my $mac = get_required_var('VIRSH_MAC');
     # direct access to the tap device, use of $vtap temporarily
-    $svirt->add_interface({type => 'direct', source => {dev => $netdev, mode => 'bridge'}, target => {dev => 'macvtap' . $vtap}, mac => {address => $mac}});
+    $svirt->add_interface({type => 'bridge', source => {bridge => 'br0'}, mac => {address => $mac}});
     my $mm_netdev = get_var('MM_NETDEV');
     my $mm_netmode = get_var('MM_NETMODE', 'bridge');
     if ($mm_netdev) {
