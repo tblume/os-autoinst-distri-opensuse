@@ -99,9 +99,9 @@ sub run {
     if (!get_var("BOOT_HDD_IMAGE") or (get_var('PATCHED_SYSTEM') and !get_var('ZDUP'))) {
         if (check_var("VIDEOMODE", "text")) {
             wait_serial("run 'yast.ssh'", 300) || die "linuxrc didn't finish";
-            select_console("installation");
-            script_run("clear");
             # If libyui REST API is used, we set it up in installation/setup_libyui
+            enter_cmd("ssh-keygen -R 192.168.71.100 -f /root/.ssh/known_hosts");
+            enter_cmd("/root/scripts/ssh-connect-vm.sh");
             enter_cmd("TERM=linux yast.ssh") unless get_var('YUI_REST_API');
         }
         else {

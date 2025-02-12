@@ -59,6 +59,7 @@ Types the password in a password prompt
 
 sub handle_password_prompt {
     my ($console) = @_;
+    my $pwd = get_var('MY_SUT_PASSWORD', $testapi::password);
     $console //= '';
 
     return if (get_var("LIVETEST") || (get_var('LIVECD') && !get_var('PATCH_BEFORE_MIGRATION'))) && (get_var('VERSION') !~ /agama/);
@@ -74,7 +75,7 @@ sub handle_password_prompt {
         type_password get_required_var(check_var('VIRSH_VMM_FAMILY', 'hyperv') ? 'HYPERV_PASSWORD' : 'VIRSH_PASSWORD');
     }
     else {
-        type_password;
+        type_password $pwd;
     }
     send_key('ret');
 }
