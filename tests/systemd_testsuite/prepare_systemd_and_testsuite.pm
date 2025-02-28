@@ -44,8 +44,9 @@ sub run {
       hostname
       net-tools-deprecated
       ncat
-      systemd-testsuite
+      bash-sh
     );
+    my $qa_testsuite_repo = get_var('QA_TESTSUITE_REPO', '');
 
     select_serial_terminal();
     # Package requires PackageHub is available
@@ -57,8 +58,7 @@ sub run {
         add_suseconnect_product(get_addon_fullname('sdk'));
         add_suseconnect_product(get_addon_fullname('phub'));
         add_suseconnect_product(get_addon_fullname('python3'));
-
-        my $repo = sprintf('http://download.suse.de/download/ibs/SUSE:/SLE-%s:/GA/standard/',
+        my $repo = sprintf('http://download.nue.suse.com/download/ibs/SUSE:/SLE-%s:/GA/standard/',
             get_var('VERSION'));
     }
 
@@ -76,6 +76,23 @@ sub run {
         }
     }
     zypper_call("in --force-resolution @pkgs");
+
+    if ($qa_testsuite_repo) {
+        zypper_call "ar $qa_testsuite_repo systemd-testrepo";
+        zypper_call '--gpg-auto-import-keys ref';
+        # use systemd from the repo of the testsuite package
+        if (get_var('SYSTEMD_FROM_TESTREPO')) {
+            zypper_call 'in --from systemd-testrepo systemd udev libsystemd0 systemd-coredump libudev1 systemd-sysvcompat systemd-testsuite systemd-lang';
+        }
+    } else {
+        if (is_sle('>15-sp6')) {
+            zypper_call("ar http://download.nue.suse.com/download/ibs/SUSE:/SLE-15-SP6:/Update/standard/ systemd-testsuiterepo");
+            zypper_call('ref');
+            zypper_call 'in --from systemd-testsuiterepo systemd-testsuite';
+        } else {
+            zypper_call 'in systemd-testsuite';
+        }
+    }
 
     # navigate to test case directory
     # extract all available test cases
