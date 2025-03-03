@@ -17,7 +17,7 @@ use Mojo::Base qw(systemd_testsuite_test);
 use testapi;
 use serial_terminal 'select_serial_terminal';
 use utils;
-use version_utils qw(is_sle);
+use version_utils qw(is_sle is_tumbleweed);
 use registration qw(add_suseconnect_product get_addon_fullname is_phub_ready);
 
 sub run {
@@ -43,9 +43,11 @@ sub run {
       e2fsprogs
       hostname
       net-tools-deprecated
-      ncat
       bash-sh
     );
+    push @pkgs, 'netcat-openbsd' if is_sle('>=15-SP4');
+    push @pkgs, 'ncat' if is_tumbleweed;
+
     my $qa_testsuite_repo = get_var('QA_TESTSUITE_REPO', '');
 
     select_serial_terminal();
@@ -63,7 +65,6 @@ sub run {
     }
 
     # QA_TESTSUITE_REPO is meant to override the default repos with a custom OBS repo to test changes on the test suite package.
-    my $qa_testsuite_repo = get_var('QA_TESTSUITE_REPO', '');
     if ($qa_testsuite_repo) {
         my $tsrepo = sprintf($qa_testsuite_repo,
             get_var('VERSION'));
