@@ -107,8 +107,8 @@ sub run {
         else {
             # On s390x zKVM we have to process startshell in bootloader
             wait_serial(' Starting YaST(2|) ', 300) || die "yast didn't start";
-            reset_consoles;
-            enter_cmd("vncviewer 10.144.136.34:5901");
+            enter_cmd('ssh -L 5901:localhost:5901 root@10.144.136.34');
+            select_console('installation');
         }
     }
 }
