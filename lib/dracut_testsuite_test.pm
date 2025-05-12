@@ -44,6 +44,7 @@ sub testsuiteinstall {
         zypper_call "ar http://dist.suse.de/install/SLP/SLE-15-SP4-Module-Server-Applications-LATEST/x86_64/DVD1/ server-repo";
         zypper_call "ar http://dist.suse.de/install/SLP/SLE-15-SP4-Module-Development-Tools-LATEST/x86_64/DVD1/ devel-repo";
         zypper_call "ar http://dist.suse.de/install/SLP/SLE-15-SP4-Module-Desktop-Applications-LATEST/x86_64/DVD1/ desktop-repo";
+        zypper_call "ar https://download.suse.de/ibs/SUSE:/SLE-15:/Update/standard/?ssl_verify=no nbd-repo";
     }
 
     if (is_sle_micro) {
@@ -52,10 +53,6 @@ sub testsuiteinstall {
         zypper_call "mr -d SLE-Micro-5.3-Updates";
         script_run('suseconnect -r INTERNAL-USE-ONLY-dd97-133d -e thomas.blume@suse.com');
     }
-
-    #for nbd
-    zypper_call "ar https://download.suse.de/ibs/SUSE:/SLE-15:/Update/standard/?ssl_verify=no nbd-repo";
-
 
     #repos necessary for test 16 (dmsquash) -> not yet implemented
     #    zypper_call "ar https://download.suse.de/ibs/SUSE:/SLE-15-SP1:/Update/standard/?ssl_verify=no kiwi-repo";
