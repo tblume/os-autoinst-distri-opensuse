@@ -3,7 +3,7 @@
 # Copyright 2022 SUSE LLC
 # SPDX-License-Identifier: FSFAP
 
-# Summary: Run upstream test TEST-35-ISCSI-MULTI after applying SUSE patches.
+# Summary: Run upstream test TEST-40-NBD after applying SUSE patches.
 # Maintainer: dracut maintainers <dracut-maintainers@suse.de>
 
 use base "dracut_testsuite_test";
@@ -13,7 +13,7 @@ use testapi;
 
 sub run {
     my ($self) = @_;
-    $self->testsuiterun('TEST-35-ISCSI-MULTI');
+    $self->testsuiterun('TEST-72-NBD');
 }
 
 sub test_flags {

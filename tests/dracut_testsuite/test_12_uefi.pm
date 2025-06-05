@@ -13,7 +13,7 @@ use testapi;
 
 sub run {
     my ($self) = @_;
-    $self->testsuiterun('TEST-03-USR-MOUNT');
+    $self->testsuiterun('TEST-12-UEFI');
 }
 
 sub test_flags {

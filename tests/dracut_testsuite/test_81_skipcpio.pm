@@ -3,7 +3,7 @@
 # Copyright 2022 SUSE LLC
 # SPDX-License-Identifier: FSFAP
 
-# Summary: Run upstream test TEST-17-LVM-THIN after applying SUSE patches.
+# Summary: Run upstream test TEST-62-SKIPCPIO after applying SUSE patches.
 # Maintainer: dracut maintainers <dracut-maintainers@suse.de>
 
 use base "dracut_testsuite_test";
@@ -13,7 +13,7 @@ use testapi;
 
 sub run {
     my ($self) = @_;
-    $self->testsuiterun('TEST-17-LVM-THIN');
+    $self->testsuiterun('TEST-81-SKIPCPIO');
 }
 
 sub test_flags {

@@ -3,7 +3,7 @@
 # Copyright 2022 SUSE LLC
 # SPDX-License-Identifier: FSFAP
 
-# Summary: Run upstream test TEST-16-DMSQUASH after applying SUSE patches.
+# Summary: Run upstream test TEST-20-NFS after applying SUSE patches.
 # Maintainer: dracut maintainers <dracut-maintainers@suse.de>
 
 use base "dracut_testsuite_test";
@@ -11,9 +11,11 @@ use warnings;
 use strict;
 use testapi;
 
+my $test_name = 'TEST-60-NFS';
+
 sub run {
     my ($self) = @_;
-    $self->testsuiterun('TEST-16-DMSQUASH');
+    $self->testsuiterun('TEST-60-NFS');
 }
 
 sub test_flags {

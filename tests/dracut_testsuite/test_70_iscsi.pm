@@ -3,7 +3,7 @@
 # Copyright 2022 SUSE LLC
 # SPDX-License-Identifier: FSFAP
 
-# Summary: Run upstream test TEST-50-MULTINIC after applying SUSE patches.
+# Summary: Run upstream test TEST-30-ISCSI after applying SUSE patches.
 # Maintainer: dracut maintainers <dracut-maintainers@suse.de>
 
 use base "dracut_testsuite_test";
@@ -13,7 +13,7 @@ use testapi;
 
 sub run {
     my ($self) = @_;
-    $self->testsuiterun('TEST-50-MULTINIC');
+    $self->testsuiterun('TEST-70-ISCSI');
 }
 
 sub test_flags {
