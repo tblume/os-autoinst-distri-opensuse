@@ -1,0 +1,10 @@
+---
+name: systemd-update-helper-test
+description: >
+  Install, Remove and Update packages for checking systemd-update-helper
+  functionality.
+vars: {}
+schedule:
+  - boot/boot_to_desktop
+  - console/systemd_update_helper_check
+  - shutdown/shutdown
