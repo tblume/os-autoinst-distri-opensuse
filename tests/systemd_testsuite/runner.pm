@@ -17,10 +17,12 @@ use Mojo::Base qw(systemd_testsuite_test);
 use testapi;
 use serial_terminal 'select_serial_terminal';
 use Utils::Logging 'save_and_upload_log';
+use Utils::Logging qw(save_and_upload_log tar_and_upload_log);
 use version_utils 'is_sle';
 
 my $test_hash;
 my $logs_path_mask = '/var/tmp/systemd-tests/systemd-test';
+my $sversion = script_output "rpm -q systemd | sed -rn 's/systemd-([0-9]*).*/\\1/p'";
 
 sub build_cmd {
     my ($target, $args) = @_;
@@ -54,47 +56,76 @@ sub run {
     my $marker = " systemd test runner: >>> $args->{test} has finished <<<";
     my $logs = qr[$logs_path_mask\.(\w+)\/];
 
-    select_serial_terminal();
+    if ($sversion >= 257) {
+        script_run('clear');
+        if ($args->{test} eq "TEST-07-PID1" || $args->{test} eq "TEST-81-GENERATORS") {
+           assert_script_run("setenforce 0");
+        } else {
+           assert_script_run("setenforce 1");
+        }
+        assert_script_run("bash -c \"./run_systemd_testsuite.sh $args->{test}\"", timeout => 3600);
+        my $res = script_output("tac logs/$args->{test}.log | sed -n \'s/Ok: *//p\'");
 
-    assert_script_run(build_cmd('clean', $args), timeout => 180);
-    # redirect stdout as a workaround to run the command and keep both the return code and the output
-    my $rc = script_run(build_cmd('setup', $args) . "> /tmp/out.txt", timeout => 240);
-    if ($rc != 0) {
-        $self->{result} = decide_result($args->{test});
-        return;
-    }
-    my $out = script_output('cat /tmp/out.txt');
-    if ($out =~ $logs) {
-        $test_hash = $1;
-        record_info("$test_hash", sprintf('Test logs: %s.%s', $logs_path_mask, $test_hash));
+        if ($res != 1) {
+            my $skip = script_output("sed -n \'/\$/s/Skipped: *//p\' logs/$args->{test}.log");
+            if ($skip == 1) {
+                record_info('SKIP', "Skiping $args->{test}!");
+            } else {
+                  if (get_var('SYSTEMD_SOFTFAIL')) {
+                      record_soft_failure("$args->{test}");
+                      $self->{result} = 'softfail';
+                  } else {
+                      $self->{result} = 'fail';
+                  }
+            }
+            upload_logs("/root/logs/$args->{test}.log", failok => 1);
+       }
     } else {
-        bmwqemu::diag 'Cannot find the location for logs';
-    }
-
-    my $texec = sprintf('(%s;echo "%s [$?]")', build_cmd('run', $args), $marker);
-    $rc = script_run $texec . "> /tmp/out.txt", timeout => $timeout;
-    if ($rc != 0) {
-        $self->{result} = decide_result($args->{test});
-        return;
-    }
-    my $test_log = script_output 'cat /tmp/out.txt';
-    if (defined($test_log) && $test_log =~ qr/$marker\s+\[(\d+)\]$/) {
-        if ($1 != 0) {
-            bmwqemu::diag "$args->{test} has failed with RC => $1!";
+        select_serial_terminal();
+        assert_script_run(build_cmd('clean', $args), timeout => 180);
+        # redirect stdout as a workaround to run the command and keep both the return code and the output
+        my $rc = script_run(build_cmd('setup', $args) . "> /tmp/out.txt", timeout => 240);
+        if ($rc != 0) {
+            $self->{result} = decide_result($args->{test});
+            return;
+        }
+        my $out = script_output('cat /tmp/out.txt');
+        if ($out =~ $logs) {
+            $test_hash = $1;
+            record_info("$test_hash", sprintf('Test logs: %s.%s', $logs_path_mask, $test_hash));
+        } else {
+            bmwqemu::diag 'Cannot find the location for logs';
+        }
+    
+        my $texec = sprintf('(%s;echo "%s [$?]")', build_cmd('run', $args), $marker);
+        $rc = script_run $texec . "> /tmp/out.txt", timeout => $timeout;
+        if ($rc != 0) {
+            $self->{result} = decide_result($args->{test});
+            return;
+        }
+        my $test_log = script_output 'cat /tmp/out.txt';
+        if (defined($test_log) && $test_log =~ qr/$marker\s+\[(\d+)\]$/) {
+            if ($1 != 0) {
+                bmwqemu::diag "$args->{test} has failed with RC => $1!";
+                $self->{result} = decide_result($args->{test});
+            }
+        } else {
+            bmwqemu::diag "$args->{test} has timed out!";
             $self->{result} = decide_result($args->{test});
         }
-    } else {
-        bmwqemu::diag "$args->{test} has timed out!";
-        $self->{result} = decide_result($args->{test});
     }
 }
 
 sub post_fail_hook {
-    my $lfile = sprintf('%s.%s/system.journal', $logs_path_mask, $test_hash);
-    select_console('log-console');
-    script_run(sprintf('xz -9 %s', $lfile));
-    $lfile .= '.xz';
-    upload_logs("$lfile", failok => 1);
+    if ($sversion < 257) {
+       my $lfile = sprintf('%s.%s/system.journal', $logs_path_mask, $test_hash);
+       select_console('log-console');
+       script_run(sprintf('xz -9 %s', $lfile));
+       $lfile .= '.xz';
+       upload_logs("$lfile", failok => 1);
+    } else {
+       tar_and_upload_log('/root/logs', '/tmp/meson-logs.tar.bz2');
+    }
     save_and_upload_log('journalctl -o short-precise --no-pager', "journalctl-host.txt");
 }
 
