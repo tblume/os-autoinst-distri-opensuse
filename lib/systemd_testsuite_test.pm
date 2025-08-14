@@ -123,11 +123,16 @@ sub testsuiteprepare {
 
 sub post_fail_hook {
     my ($self) = @_;
-    #upload logs from given testname
-    tar_and_upload_log('/usr/lib/systemd/tests/logs', '/tmp/systemd_testsuite-logs.tar.bz2');
-    tar_and_upload_log('/var/log/journal /run/log/journal', 'binary-journal-log.tar.bz2');
-    save_and_upload_log('journalctl --no-pager -axb -o short-precise', 'journal.txt');
-    upload_logs('/shutdown-log.txt', failok => 1);
+    my $sversion = script_output "rpm -q systemd-testsuite | sed -rn 's/systemd-testsuite-([0-9]*)-.*/\\1/p'";
+    if ($sversion >= 258) {
+       tar_and_upload_log('/root/logs', 'run_systemd_testsuite-logs.tar.bz2');
+    } else {
+        #upload logs from given testname
+        tar_and_upload_log('/usr/lib/systemd/tests/logs', '/tmp/systemd_testsuite-logs.tar.bz2');
+        tar_and_upload_log('/var/log/journal /run/log/journal', 'binary-journal-log.tar.bz2');
+        save_and_upload_log('journalctl --no-pager -axb -o short-precise', 'journal.txt');
+        upload_logs('/shutdown-log.txt', failok => 1);
+    }
 }
 
 
