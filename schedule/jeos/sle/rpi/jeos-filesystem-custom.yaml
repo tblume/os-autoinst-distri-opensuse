@@ -1,0 +1,35 @@
+---
+description: 'Filesystems RPi test suite. Maintainer: dheidler'
+name: 'jeos-filesystem@aarch64 ( qemu )'
+schedule:
+  - installation/bootloader_uefi
+  - jeos/firstrun
+  - console/force_scheduled_tasks
+  - jeos/host_config
+  - jeos/record_machine_id
+  - jeos/diskusage
+  - jeos/build_key
+  - console/prjconf_excluded_rpms
+  - console/journal_check
+  - microos/libzypp_config
+  - update/zypper_clear_repos
+  - console/zypper_ar
+  - console/zypper_ref
+  - console/system_prepare
+  - console/prepare_test_data
+  - console/consoletest_setup
+  - console/lsof
+  - console/autofs
+  - console/lvm
+  - console/btrfs_check
+  - console/install_custom_systemdpackage
+  - console/snapper_undochange
+  - console/snapper_create
+  - console/btrfsmaintenance
+  - console/btrfs_autocompletion
+  - console/btrfs_qgroups
+  - console/snapper_cleanup
+  - console/snapper_used_space
+  - console/udisks2
+  - network/cifs
+  - network/samba/server
