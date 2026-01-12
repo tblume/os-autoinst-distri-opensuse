@@ -19,7 +19,7 @@ use version_utils qw(is_sle is_leap is_tumbleweed);
 use x11utils qw(select_user_gnome start_root_shell_in_xterm handle_gnome_activities default_gui_terminal close_gui_terminal);
 use POSIX 'strftime';
 use mm_network;
-use Utils::Logging qw(export_healthcheck_basic select_log_console export_logs_basic export_logs_desktop record_avc_selinux_alerts);
+use Utils::Logging qw(export_healthcheck_basic select_log_console export_logs_basic export_logs_desktop record_avc_selinux_alerts tar_and_upload_log);
 use serial_terminal 'select_serial_terminal';
 
 sub post_run_hook {
@@ -36,6 +36,10 @@ sub post_fail_hook {
     shift->record_avc_selinux_alerts;
     # Export extra log after failure for further check gdm issue 1127317, also poo#45236 used for tracking action on Openqa
     export_logs_desktop;
+    #upload systemd and coredump logs
+    tar_and_upload_log('/var/log/journal /run/log/journal', 'binary-journal-logs.tar.bz2');
+    tar_and_upload_log('/var/lib/systemd/coredump', 'coredumps.tar.bz2');
+    save_and_upload_log('journalctl --no-pager -axb -o short-precise', 'journal.txt');
     select_log_console;
     show_tasks_in_blocked_state;
 }
