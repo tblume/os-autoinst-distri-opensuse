@@ -67,7 +67,7 @@ sub run {
         zypper_call("--gpg-auto-import-keys ref", 180);
         zypper_call 'in --from systemd-tests libsystemd0 libudev1 systemd systemd-lang udev';
             
-        change_grub_config('=.*', '=9', 'GRUB_TIMEOUT');
+        change_grub_config('GRUB_TIMEOUT=.*', 'GRUB_TIMEOUT=9', 'GRUB_TIMEOUT');
         grub_mkconfig;
         wait_screen_change { enter_cmd "shutdown -r now" };
         if (is_s390x) {
@@ -104,7 +104,7 @@ sub run {
         assert_script_run("cd /root");
         assert_script_run("curl -JLO --header \"PRIVATE-TOKEN: $gitlabtoken\" --url 'https://gitlab.suse.de/api/v4/projects/4603/repository/files/run_systemd_testsuite.sh/raw?ref=master'");
         assert_script_run('chmod u+x run_systemd_testsuite.sh');
-        assert_script_run("bash -c \"./run_systemd_testsuite.sh --repo $testsrepo setup\"", timeout => 1200);
+        assert_script_run("bash -c \"./run_systemd_testsuite.sh --repo $testsrepo setup\" >setup.txt", timeout => 1200);
     }
 
     # extract all available test cases
@@ -144,8 +144,10 @@ sub run {
     # execute generic openQA's systemd runner for each test case directory found within the *systemd-tests* package
     # test case options are passed to each scheduled module separately
     foreach my $test (@schedule) {
-        my $args = OpenQA::Test::RunArgs->new(test => $test, dir => $testdir, make_opts => $test_opts);
-        autotest::loadtest('tests/systemd_testsuite/runner.pm', name => $test, run_args => $args);
+       # if (($test eq "TEST-07-PID1") || ($test eq "TEST-64-UDEV-STORAGE-simultaneous_events")) {
+         my $args = OpenQA::Test::RunArgs->new(test => $test, dir => $testdir, make_opts => $test_opts);
+         autotest::loadtest('tests/systemd_testsuite/runner.pm', name => $test, run_args => $args);
+       # }
     }
 
     autotest::loadtest("tests/shutdown/shutdown.pm");
