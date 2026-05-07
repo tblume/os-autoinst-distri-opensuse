@@ -71,6 +71,9 @@ sub run {
             if ($skip == 1) {
                 record_info('SKIP', "Skiping $args->{test}!");
             } else {
+                $self->{result} = decide_result($args->{test});
+                return;
+
                   if (get_var('SYSTEMD_SOFTFAIL')) {
                       record_soft_failure("$args->{test}");
                       $self->{result} = 'softfail';
@@ -127,6 +130,10 @@ sub post_fail_hook {
        tar_and_upload_log('/root/logs', '/tmp/meson-logs.tar.bz2');
     }
     save_and_upload_log('journalctl -o short-precise --no-pager', "journalctl-host.txt");
+}
+
+sub test_flags {
+    return {fatal => 0};
 }
 
 1;
