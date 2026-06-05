@@ -54,7 +54,7 @@ sub run {
     );
     my $testsrepo = get_var('SYSTEMD_TESTS_REPO');
 
-    select_serial_terminal();
+    select_console('root-console');
     # Package requires PackageHub is available
     return if (!is_phub_ready() && is_sle('<16'));
 
