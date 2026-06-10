@@ -104,7 +104,8 @@ sub run {
         assert_script_run("cd /root");
         assert_script_run("curl -JLO --header \"PRIVATE-TOKEN: $gitlabtoken\" --url 'https://gitlab.suse.de/api/v4/projects/4603/repository/files/run_systemd_testsuite.sh/raw?ref=master'");
         assert_script_run('chmod u+x run_systemd_testsuite.sh');
-        assert_script_run("bash -c \"./run_systemd_testsuite.sh --repo $testsrepo setup\" >setup.txt", timeout => 1200);
+        assert_script_run('setenforce 0');
+        assert_script_run("bash -c \"SYSTEMD_TESTSUITE_VERSION=261 ./run_systemd_testsuite.sh --repo $testsrepo setup\" >setup.txt", timeout => 1200);
     }
 
     # extract all available test cases
