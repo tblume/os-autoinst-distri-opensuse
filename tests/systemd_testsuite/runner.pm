@@ -63,12 +63,6 @@ sub run {
         } else {
            assert_script_run("setenforce 1");
         }
-# fix test failure due to SYSTEMD_SUPPRESS_SYNC is set
-        if ($args->{test} eq "TEST-75-RESOLVED") {
-             script_run("export SYSTEMD_SUPPRESS_SYNC=0");
-        } else {
-             script_run("export SYSTEMD_SUPPRESS_SYNC=1");
-        }
         assert_script_run("bash -c \"SYSTEMD_TESTSUITE_VERSION=261 ./run_systemd_testsuite.sh $args->{test}\"", timeout => 3600);
         my $res = script_output("tac logs/$args->{test}.log | sed -n \'s/Ok: *//p\'");
 
