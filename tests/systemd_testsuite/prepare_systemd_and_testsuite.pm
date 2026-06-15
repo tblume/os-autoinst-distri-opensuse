@@ -23,6 +23,8 @@ use Utils::Architectures;
 use power_action_utils 'power_action';
 use version_utils qw(is_opensuse is_sle is_tumbleweed);
 use bootloader_setup qw(change_grub_config grub_mkconfig);
+use version_utils qw(is_transactional);
+use transactional;
 
 sub run {
     my ($self) = @_;    
@@ -48,8 +50,8 @@ sub run {
       hostname
       net-tools-deprecated
       git
-      distribution-gpg-keys
       coreutils
+      openssl
       ca-certificates-suse
     );
     my $testsrepo = get_var('SYSTEMD_TESTS_REPO');
@@ -58,17 +60,50 @@ sub run {
     # Package requires PackageHub is available
     return if (!is_phub_ready() && is_sle('<16'));
 
-    zypper_call("ar http://dist.nue.suse.com/ibs/SUSE:/CA/openSUSE_Tumbleweed/ SUSE_CA");
-    zypper_call("--gpg-auto-import-keys ref", 180);
+    if (is_transactional) {
+        enter_trup_shell;
+    }
+
+    zypper_call("--gpg-auto-import-keys ref -f", 180);
+    zypper_call("ar  http://dist.nue.suse.com/ibs/SUSE:/CA/openSUSE_Tumbleweed/ SUSE_CA");
     zypper_call("in @pkgs");
 
     if (get_var('SYSTEMD_FROM_TESTREPO')) {
         zypper_call("ar $testsrepo systemd-tests");
         zypper_call("--gpg-auto-import-keys ref", 180);
         zypper_call 'in --from systemd-tests libsystemd0 libudev1 systemd systemd-lang udev';
+    } else {
+        my $sversion = script_output "rpm -q systemd | sed -rn 's/systemd-([0-9]*).*/\\1/p'";
+
+        if ($sversion < 257) {
+            if (is_sle("<16")) {
+                add_suseconnect_product(get_addon_fullname('legacy'));
+                add_suseconnect_product(get_addon_fullname('desktop'));
+                add_suseconnect_product(get_addon_fullname('sdk'));
+                add_suseconnect_product(get_addon_fullname('phub'));
+                add_suseconnect_product(get_addon_fullname('python3'));
+                zypper_call("ar 'http://download.suse.de/download/ibs/SUSE:/SLE-%s:/GA/standard/' testsuiterepo");
+                zypper_call("--gpg-auto-import-keys ref", 180);
+            }
+    
+            zypper_call 'in systemd-testsuite';
             
-        change_grub_config('GRUB_TIMEOUT=.*', 'GRUB_TIMEOUT=9', 'GRUB_TIMEOUT');
-        grub_mkconfig;
+            assert_script_run("cd /usr/lib/systemd/tests/integration-tests/");
+        } else {
+            my $gitlabtoken = get_var('GITLAB_TOKEN');
+    
+            assert_script_run("cd /root");
+            assert_script_run("curl -JLO --header \"PRIVATE-TOKEN: $gitlabtoken\" --url 'https://gitlab.suse.de/api/v4/projects/4603/repository/files/run_systemd_testsuite.sh/raw?ref=master'");
+            assert_script_run('chmod u+x run_systemd_testsuite.sh');
+            assert_script_run('setenforce 0');
+            assert_script_run("bash -c \"SYSTEMD_TESTSUITE_VERSION=261 SYSTEMD_TESTSUITE_REPO_URL=$testsrepo ./run_systemd_testsuite.sh --repo $testsrepo setup\" >setup.txt", timeout => 1200);
+        }
+    }
+
+    if (is_transactional) {
+        exit_trup_shell;
+#        change_grub_config('GRUB_TIMEOUT=.*', 'GRUB_TIMEOUT=9', 'GRUB_TIMEOUT');
+#        grub_mkconfig;
         wait_screen_change { enter_cmd "shutdown -r now" };
         if (is_s390x) {
             $self->wait_boot(bootloader_time => 180);
@@ -81,32 +116,7 @@ sub run {
         assert_screen('linux-login', 30);
         reset_consoles;
         select_console('root-console');
-    }
-
-    my $sversion = script_output "rpm -q systemd | sed -rn 's/systemd-([0-9]*).*/\\1/p'";
-    if ($sversion < 257) {
-        if (is_sle("<16")) {
-            add_suseconnect_product(get_addon_fullname('legacy'));
-            add_suseconnect_product(get_addon_fullname('desktop'));
-            add_suseconnect_product(get_addon_fullname('sdk'));
-            add_suseconnect_product(get_addon_fullname('phub'));
-            add_suseconnect_product(get_addon_fullname('python3'));
-            zypper_call("ar 'http://download.suse.de/download/ibs/SUSE:/SLE-%s:/GA/standard/' testsuiterepo");
-            zypper_call("--gpg-auto-import-keys ref", 180);
-        }
-
-        zypper_call 'in systemd-testsuite';
-        
-        assert_script_run("cd /usr/lib/systemd/tests/integration-tests/");
-    } else {
-        my $gitlabtoken = get_var('GITLAB_TOKEN');
-
-        assert_script_run("cd /root");
-        assert_script_run("curl -JLO --header \"PRIVATE-TOKEN: $gitlabtoken\" --url 'https://gitlab.suse.de/api/v4/projects/4603/repository/files/run_systemd_testsuite.sh/raw?ref=master'");
-        assert_script_run('chmod u+x run_systemd_testsuite.sh');
-        assert_script_run('setenforce 0');
-        assert_script_run("bash -c \"SYSTEMD_TESTSUITE_VERSION=261 ./run_systemd_testsuite.sh --repo $testsrepo setup\" >setup.txt", timeout => 1200);
-    }
+    }    
 
     # extract all available test cases
     assert_script_run("cd /root/tests/integration-tests/");
@@ -145,10 +155,10 @@ sub run {
     # execute generic openQA's systemd runner for each test case directory found within the *systemd-tests* package
     # test case options are passed to each scheduled module separately
     foreach my $test (@schedule) {
-       # if (($test eq "TEST-07-PID1") || ($test eq "TEST-64-UDEV-STORAGE-simultaneous_events")) {
+    #   if (($test eq "TEST-25-IMPORT") || ($test eq "TEST-64-UDEV-STORAGE-simultaneous_events")) {
          my $args = OpenQA::Test::RunArgs->new(test => $test, dir => $testdir, make_opts => $test_opts);
          autotest::loadtest('tests/systemd_testsuite/runner.pm', name => $test, run_args => $args);
-       # }
+    #   }
     }
 
     autotest::loadtest("tests/shutdown/shutdown.pm");
