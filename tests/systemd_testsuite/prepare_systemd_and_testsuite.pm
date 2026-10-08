@@ -53,6 +53,7 @@ sub run {
       coreutils
       openssl
       ca-certificates-suse
+      distribution-gpg-keys
     );
     my $testsrepo = get_var('SYSTEMD_TESTS_REPO');
 
@@ -93,7 +94,9 @@ sub run {
             my $gitlabtoken = get_var('GITLAB_TOKEN');
     
             assert_script_run("cd /root");
+#            assert_script_run("curl -JLO --header \"PRIVATE-TOKEN: $gitlabtoken\" --url 'https://gitlab.suse.de/api/v4/projects/4603/repository/files/run_systemd_testsuite.sh/raw?ref=systemd-testsuite-dev'");
             assert_script_run("curl -JLO --header \"PRIVATE-TOKEN: $gitlabtoken\" --url 'https://gitlab.suse.de/api/v4/projects/4603/repository/files/run_systemd_testsuite.sh/raw?ref=master'");
+#            assert_script_run("curl -JLO --header \"PRIVATE-TOKEN: $gitlabtoken\" --url 'https://gitlab.suse.de/api/v4/projects/14137/repository/files/run_systemd_testsuite.sh/raw?ref=systemd-testsuite-v261'");
             assert_script_run('chmod u+x run_systemd_testsuite.sh');
             assert_script_run('setenforce 0');
             assert_script_run("bash -c \"SYSTEMD_TESTSUITE_VERSION=261 SYSTEMD_TESTSUITE_REPO_URL=$testsrepo ./run_systemd_testsuite.sh --repo $testsrepo setup\" >setup.txt", timeout => 1200);
@@ -143,6 +146,11 @@ sub run {
                 foreach my $subtest (@subtests) {
                     push @schedule, "$test-$subtest";
                 }
+            } elsif ($test eq "TEST-90-RESTRICT-FSACCESS") {
+                my @subtests = split(/\n/, script_output(qq(sed -n '/integration_tests/{n;s/.*name. : .\\([a-z]*_[a-z]*_*[a-z]*_*[a-z]*_*[a-z]*\\).*/\\1/p;}' $test/meson.build)));
+                foreach my $subtest (@subtests) {
+                    push @schedule, "$test-$subtest";
+                }
             } else {
                 push @schedule, $test;
             }
@@ -155,10 +163,10 @@ sub run {
     # execute generic openQA's systemd runner for each test case directory found within the *systemd-tests* package
     # test case options are passed to each scheduled module separately
     foreach my $test (@schedule) {
-    #   if (($test eq "TEST-25-IMPORT") || ($test eq "TEST-64-UDEV-STORAGE-simultaneous_events")) {
+       if (($test eq "TEST-85-NETWORK-NetworkdWWANTests") || ($test eq "TEST-86-MULTI-PROFILE-UKI") || ($test eq "TEST-87-AUX-UTILS-VM") || ($test eq "TEST-88-UPGRADE") || ($test eq "TEST-89-RESOLVED-MDNS") || ($test eq "TEST-90-RESTRICT-FSACCESS") || ($test eq "TEST-90-RESTRICT-FSACCESS-enforce") || ($test eq "TEST-90-RESTRICT-FSACCESS-dm-verity-keyring")) {
          my $args = OpenQA::Test::RunArgs->new(test => $test, dir => $testdir, make_opts => $test_opts);
          autotest::loadtest('tests/systemd_testsuite/runner.pm', name => $test, run_args => $args);
-    #   }
+       }
     }
 
     autotest::loadtest("tests/shutdown/shutdown.pm");
