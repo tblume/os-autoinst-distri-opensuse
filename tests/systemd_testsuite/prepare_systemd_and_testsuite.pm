@@ -54,6 +54,7 @@ sub run {
       openssl
       ca-certificates-suse
       distribution-gpg-keys
+      jq
     );
     my $testsrepo = get_var('SYSTEMD_TESTS_REPO');
 
@@ -99,7 +100,7 @@ sub run {
 #            assert_script_run("curl -JLO --header \"PRIVATE-TOKEN: $gitlabtoken\" --url 'https://gitlab.suse.de/api/v4/projects/14137/repository/files/run_systemd_testsuite.sh/raw?ref=systemd-testsuite-v261'");
             assert_script_run('chmod u+x run_systemd_testsuite.sh');
             assert_script_run('setenforce 0');
-            assert_script_run("bash -c \"SYSTEMD_TESTSUITE_VERSION=261 SYSTEMD_TESTSUITE_REPO_URL=$testsrepo ./run_systemd_testsuite.sh --repo $testsrepo setup\" >setup.txt", timeout => 1200);
+            script_run("bash -c \"SYSTEMD_TESTSUITE_VERSION=261 SYSTEMD_TESTSUITE_REPO_URL=$testsrepo ./run_systemd_testsuite.sh --repo $testsrepo all\"", timeout => 1200);
         }
     }
 
@@ -129,32 +130,35 @@ sub run {
     if (my $include = get_var('SYSTEMD_INCLUDE')) {
         @schedule = split(',', $include);
     } else {
-        my @tests = split(/\n/, script_output(qq(find . -maxdepth 1 -type d -name "TEST-*")));
-        foreach my $test (@tests) {
-            # trim folder prefix
-            $test =~ s/\.\///;
-            if (defined($exclude) && $test =~ m/$exclude/) {
-                next;
-            }
-            if ($test eq "TEST-64-UDEV-STORAGE") {
-                my @subtests = split(/\n/, script_output(qq(sed -n '/udev_storage_tests/{n;s/.*name. : .\\([a-z]*_[a-z]*_*[a-z]*_*[a-z]*_*[a-z]*\\).*/\\1/p;}' $test/meson.build)));
-                foreach my $subtest (@subtests) {
-                    push @schedule, "$test-$subtest";
-                }
-            } elsif ($test eq "TEST-85-NETWORK") {
-                my @subtests = split(/\n/, script_output(qq(sed -n '/foreach/,/integration_tests/s/^ *.\\([a-Z]*\\)Tests.*/\\1Tests/gp' $test/meson.build)));
-                foreach my $subtest (@subtests) {
-                    push @schedule, "$test-$subtest";
-                }
-            } elsif ($test eq "TEST-90-RESTRICT-FSACCESS") {
-                my @subtests = split(/\n/, script_output(qq(sed -n '/integration_tests/{n;s/.*name. : .\\([a-z]*_[a-z]*_*[a-z]*_*[a-z]*_*[a-z]*\\).*/\\1/p;}' $test/meson.build)));
-                foreach my $subtest (@subtests) {
-                    push @schedule, "$test-$subtest";
-                }
-            } else {
-                push @schedule, $test;
-            }
-        }
+        my @tests =  split(/\n/, "TEST-85-NETWORK-iblas TEST-90-RESTRICT-FSACCESS-dm-verity-keyring TEST-90-RESTRICT-FSACCESS-enforce");
+#        my @tests = split(/\n/, script_output(for test in $(ls /root/logs); do sed -n 's/.*systemd-testsuite:\([[:graph:]]*\) FAIL.*/\1/p' /root/logs/$test; done));
+#        my @tests = split(/\n/, script_output(qq(sed -n 's/.*systemd-testsuite:\([[:graph:]]*\) FAIL.*/\1/p testlogs.txt')));
+#        my @tests = split(/\n/, script_output(qq(find . -maxdepth 1 -type d -name "TEST-*")));
+#        foreach my $test (@tests) {
+#            # trim folder prefix
+#            $test =~ s/\.\///;
+#            if (defined($exclude) && $test =~ m/$exclude/) {
+#                next;
+#            }
+#            if ($test eq "TEST-64-UDEV-STORAGE") {
+#                my @subtests = split(/\n/, script_output(qq(sed -n '/udev_storage_tests/{n;s/.*name. : .\\([a-z]*_[a-z]*_*[a-z]*_*[a-z]*_*[a-z]*\\).*/\\1/p;}' $test/meson.build)));
+#                foreach my $subtest (@subtests) {
+#                   push @schedule, "$test-$subtest";
+#               }
+#            } elsif ($test eq "TEST-85-NETWORK") {
+#                my @subtests = split(/\n/, script_output(qq(sed -n '/foreach/,/integration_tests/s/^ *.\\([a-Z]*\\)Tests.*/\\1Tests/gp' $test/meson.build)));
+#                foreach my $subtest (@subtests) {
+#                    push @schedule, "$test-$subtest";
+#                }
+#            } elsif ($test eq "TEST-90-RESTRICT-FSACCESS") {
+#                my @subtests = split(/\n/, script_output(qq(sed -n '/integration_tests/{n;s/.*name. : .\\([a-z]*_[a-z]*_*[a-z]*_*[a-z]*_*[a-z]*\\).*/\\1/p;}' $test/meson.build)));
+#                foreach my $subtest (@subtests) {
+#                    push @schedule, "$test-$subtest";
+#                }
+#            } else {
+#                push @schedule, $test;
+#            }
+#        }
     }
 
     script_run("cd /root");
@@ -163,10 +167,8 @@ sub run {
     # execute generic openQA's systemd runner for each test case directory found within the *systemd-tests* package
     # test case options are passed to each scheduled module separately
     foreach my $test (@schedule) {
-       if (($test eq "TEST-85-NETWORK-NetworkdWWANTests") || ($test eq "TEST-86-MULTI-PROFILE-UKI") || ($test eq "TEST-87-AUX-UTILS-VM") || ($test eq "TEST-88-UPGRADE") || ($test eq "TEST-89-RESOLVED-MDNS") || ($test eq "TEST-90-RESTRICT-FSACCESS") || ($test eq "TEST-90-RESTRICT-FSACCESS-enforce") || ($test eq "TEST-90-RESTRICT-FSACCESS-dm-verity-keyring")) {
-         my $args = OpenQA::Test::RunArgs->new(test => $test, dir => $testdir, make_opts => $test_opts);
-         autotest::loadtest('tests/systemd_testsuite/runner.pm', name => $test, run_args => $args);
-       }
+        my $args = OpenQA::Test::RunArgs->new(test => $test, dir => $testdir, make_opts => $test_opts);
+        autotest::loadtest('tests/systemd_testsuite/runner.pm', name => $test, run_args => $args);
     }
 
     autotest::loadtest("tests/shutdown/shutdown.pm");
